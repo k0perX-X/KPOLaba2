@@ -4,8 +4,5 @@
 
     partial class UniversityDataSet
     {
-        partial class SpecializationsDataTable
-        {
-        }
     }
 }
