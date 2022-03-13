@@ -67,6 +67,7 @@ namespace KPOLaba2
         {
             SpecializationsEditForm specializationsEditForm = new SpecializationsEditForm();
             specializationsEditForm.ShowDialog();
+            LoadTree();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -174,14 +175,17 @@ namespace KPOLaba2
                     case (int)TableLevel.Faculties:
                         FacultyEditForm frm1 = new FacultyEditForm(this, studentIDs[treeView1.SelectedNode]);
                         frm1.ShowDialog();
+                        LoadTree();
                         break;
                     case (int)TableLevel.Groups:
                         GroupEditForm frm2 = new GroupEditForm(this, studentIDs[treeView1.SelectedNode]);
                         frm2.ShowDialog();
+                        LoadTree();
                         break;
                     case (int)TableLevel.Students:
                         StudentEditForm frm3 = new StudentEditForm(this, studentIDs[treeView1.SelectedNode]);
                         frm3.ShowDialog();
+                        LoadTree();
                         break;
                 }
             }
@@ -208,16 +212,31 @@ namespace KPOLaba2
                             var dr = cmd.ExecuteReader();
                             dr.Read();
                             Debug.Print(dr.ToString());
+                            LoadTree();
                         }
                             break;
                         case (int)TableLevel.Groups:
                         {
-
+                            connection.Open();
+                            SqlCommand cmd = new SqlCommand(
+                                @"Delete from Groups where Groups.ID = @groupID", connection);
+                            cmd.Parameters.AddWithValue("@groupID", groupIDs[treeView1.SelectedNode]);
+                            var dr = cmd.ExecuteReader();
+                            dr.Read();
+                            Debug.Print(dr.ToString());
+                            LoadTree();
                         }
                             break;
                         case (int)TableLevel.Students:
                         {
-
+                            connection.Open();
+                            SqlCommand cmd = new SqlCommand(
+                                @"Delete from Students where Students.ID = @studentID", connection);
+                            cmd.Parameters.AddWithValue("@studentID", studentIDs[treeView1.SelectedNode]);
+                            var dr = cmd.ExecuteReader();
+                            dr.Read();
+                            Debug.Print(dr.ToString());
+                            LoadTree();
                         }
                             break;
                     }
@@ -232,18 +251,21 @@ namespace KPOLaba2
         {
             StudentEditForm frm3 = new StudentEditForm(this);
             frm3.ShowDialog();
+            LoadTree();
         }
 
         private void группуToolStripMenuItem_Click(object sender, EventArgs e)
         {
             GroupEditForm frm2 = new GroupEditForm(this);
             frm2.ShowDialog();
+            LoadTree();
         }
 
         private void факультетToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FacultyEditForm frm1 = new FacultyEditForm(this);
             frm1.ShowDialog();
+            LoadTree();
         }
     }
 }
