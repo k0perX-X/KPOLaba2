@@ -14,7 +14,13 @@ namespace KPOLaba2
 {
     public partial class MainForm : Form
     {
-        private enum TableLevel { Faculties = 0, Groups = 1, Students = 2};
+        private enum TableLevel
+        {
+            Faculties = 0,
+            Groups = 1,
+            Students = 2
+        };
+
         private string cs =
             @"Data Source=HPVICTUS16\SQLEXPRESS; Initial Catalog=University; Integrated Security=true";
 
@@ -22,6 +28,7 @@ namespace KPOLaba2
         {
             get { return _faculties; }
         }
+
         private Dictionary<int, string> _faculties = new Dictionary<int, string>();
         private Dictionary<TreeNode, int> facultyIDs = new Dictionary<TreeNode, int>();
 
@@ -29,6 +36,7 @@ namespace KPOLaba2
         {
             get { return _groups; }
         }
+
         private Dictionary<int, string> _groups = new Dictionary<int, string>();
         private Dictionary<TreeNode, int> groupIDs = new Dictionary<TreeNode, int>();
 
@@ -36,6 +44,7 @@ namespace KPOLaba2
         {
             get { return _students; }
         }
+
         private Dictionary<int, string> _students = new Dictionary<int, string>();
         private Dictionary<TreeNode, int> studentIDs = new Dictionary<TreeNode, int>();
 
@@ -43,6 +52,7 @@ namespace KPOLaba2
         {
             get { return _specializations; }
         }
+
         private Dictionary<int, string> _specializations;
 
         public MainForm()
@@ -57,25 +67,21 @@ namespace KPOLaba2
                 var dr = cmd.ExecuteReader();
                 while (dr.Read())
                 {
-                    _specializations.Add((int)dr["ID"], dr["Name"].ToString());
+                    _specializations.Add((int) dr["ID"], dr["Name"].ToString());
                 }
             }
-            LoadTree();
+
+            LoadFaculties();
         }
-        
+
         private void Specializations_Click(object sender, EventArgs e)
         {
             SpecializationsEditForm specializationsEditForm = new SpecializationsEditForm();
             specializationsEditForm.ShowDialog();
-            LoadTree();
+            LoadFaculties();
         }
 
         private void button1_Click(object sender, EventArgs e)
-        {
-            LoadTree();
-        }
-
-        public void LoadTree()
         {
             _faculties = new Dictionary<int, string>();
             facultyIDs = new Dictionary<TreeNode, int>();
@@ -91,6 +97,41 @@ namespace KPOLaba2
                 {
                     LoadStudents(groupIDs[treeNodeNode], treeNodeNode);
                 }
+            }
+            treeView1.ExpandAll();
+        }
+
+        public void LoadTree(TreeNode treeNode)
+        {
+            switch (treeNode.Level)
+            {
+                case (int)TableLevel.Faculties:
+                    LoadFaculties();
+                    break;
+                case (int)TableLevel.Groups:
+                    LoadFaculties();
+                    LoadGroups(facultyIDs[treeNode.Parent], treeNode.Parent);
+                    break;
+                case (int)TableLevel.Students:
+                    LoadFaculties();
+                    LoadGroups(facultyIDs[treeNode.Parent.Parent], treeNode.Parent.Parent);
+                    LoadStudents(groupIDs[treeNode.Parent], treeNode.Parent);
+                    break;
+            }
+            TreeNode parent = treeNode.Parent;
+            List<TreeNode> parents = new List<TreeNode>();
+            while (parent != null)
+            {
+                parents.Add(parent);
+                parent = parent.Parent;
+                Debug.Print(parents.ToString());
+            }
+
+            parents.Reverse();
+            foreach (TreeNode node in parents)
+            {
+                node.Expand();
+                Debug.Print(node.ToString());
             }
         }
 
@@ -108,15 +149,19 @@ namespace KPOLaba2
                     string name = dr["Name"].ToString();
                     int id = (int) dr["ID"];
                     TreeNode tn = new TreeNode(name);
+                    tn.Nodes.Add("Загрузка...");
                     treeView1.Nodes.Add(tn);
-                    _faculties.Add(id, name);
+                    if (!_faculties.ContainsKey(id))
+                        _faculties.Add(id, name);
+                    else
+                        _faculties[id] = name;
                     facultyIDs.Add(tn, id);
                 }
             }
         }
 
         private void LoadGroups(int facultyID, TreeNode parentTreeNode)
-        { 
+        {
             using (SqlConnection connection = new SqlConnection(cs))
             {
                 connection.Open();
@@ -129,10 +174,14 @@ namespace KPOLaba2
                 while (dr.Read())
                 {
                     string name = dr["Name"].ToString();
-                    int id = (int)dr["ID"];
-                    TreeNode tn = new TreeNode(name + ", " + Specializations[(int)dr["Specialization ID"]]);
+                    int id = (int) dr["ID"];
+                    TreeNode tn = new TreeNode(name + ", " + Specializations[(int) dr["Specialization ID"]]);
+                    tn.Nodes.Add("Загрузка...");
                     parentTreeNode.Nodes.Add(tn);
-                    _groups.Add(id, name);
+                    if (!_groups.ContainsKey(id)) 
+                        _groups.Add(id, name);
+                    else
+                        _groups[id] = name;
                     groupIDs.Add(tn, id);
                 }
             }
@@ -157,40 +206,15 @@ namespace KPOLaba2
                         name = dr["Surname"].ToString() + " " + dr["Name"].ToString() + " " + middleName;
                     else
                         name = dr["Surname"].ToString() + " " + dr["Name"].ToString();
-                    int id = (int)dr["ID"];
+                    int id = (int) dr["ID"];
                     TreeNode tn = new TreeNode(name);
                     parentTreeNode.Nodes.Add(tn);
-                    _students.Add(id, name);
+                    if (!_students.ContainsKey(id))
+                        _students.Add(id, name);
+                    else
+                        _students[id] = name;
                     studentIDs.Add(tn, id);
                 }
-            }
-        }
-
-        private void treeView1_DoubleClick(object sender, EventArgs e)
-        {
-            try
-            {
-                switch (treeView1.SelectedNode.Level)
-                {
-                    case (int)TableLevel.Faculties:
-                        FacultyEditForm frm1 = new FacultyEditForm(this, studentIDs[treeView1.SelectedNode]);
-                        frm1.ShowDialog();
-                        LoadTree();
-                        break;
-                    case (int)TableLevel.Groups:
-                        GroupEditForm frm2 = new GroupEditForm(this, studentIDs[treeView1.SelectedNode]);
-                        frm2.ShowDialog();
-                        LoadTree();
-                        break;
-                    case (int)TableLevel.Students:
-                        StudentEditForm frm3 = new StudentEditForm(this, studentIDs[treeView1.SelectedNode]);
-                        frm3.ShowDialog();
-                        LoadTree();
-                        break;
-                }
-            }
-            catch (NullReferenceException exception)
-            {
             }
         }
 
@@ -203,7 +227,7 @@ namespace KPOLaba2
 
                     switch (treeView1.SelectedNode.Level)
                     {
-                        case (int)TableLevel.Faculties:
+                        case (int) TableLevel.Faculties:
                         {
                             connection.Open();
                             SqlCommand cmd = new SqlCommand(
@@ -212,10 +236,10 @@ namespace KPOLaba2
                             var dr = cmd.ExecuteReader();
                             dr.Read();
                             Debug.Print(dr.ToString());
-                            LoadTree();
+                            LoadTree(treeView1.SelectedNode);
                         }
                             break;
-                        case (int)TableLevel.Groups:
+                        case (int) TableLevel.Groups:
                         {
                             connection.Open();
                             SqlCommand cmd = new SqlCommand(
@@ -224,10 +248,10 @@ namespace KPOLaba2
                             var dr = cmd.ExecuteReader();
                             dr.Read();
                             Debug.Print(dr.ToString());
-                            LoadTree();
+                            LoadTree(treeView1.SelectedNode);
                         }
                             break;
-                        case (int)TableLevel.Students:
+                        case (int) TableLevel.Students:
                         {
                             connection.Open();
                             SqlCommand cmd = new SqlCommand(
@@ -236,7 +260,7 @@ namespace KPOLaba2
                             var dr = cmd.ExecuteReader();
                             dr.Read();
                             Debug.Print(dr.ToString());
-                            LoadTree();
+                            LoadTree(treeView1.SelectedNode);
                         }
                             break;
                     }
@@ -251,21 +275,70 @@ namespace KPOLaba2
         {
             StudentEditForm frm3 = new StudentEditForm(this);
             frm3.ShowDialog();
-            LoadTree();
+            LoadFaculties();
         }
 
         private void группуToolStripMenuItem_Click(object sender, EventArgs e)
         {
             GroupEditForm frm2 = new GroupEditForm(this);
             frm2.ShowDialog();
-            LoadTree();
+            LoadFaculties();
         }
 
         private void факультетToolStripMenuItem_Click(object sender, EventArgs e)
         {
             FacultyEditForm frm1 = new FacultyEditForm(this);
             frm1.ShowDialog();
-            LoadTree();
+            LoadFaculties();
+        }
+
+        private void treeView1_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
+        {
+            //try
+            //{
+                switch (e.Node.Level)
+                {
+                    case (int) TableLevel.Faculties:
+                        FacultyEditForm frm1 = new FacultyEditForm(this, facultyIDs[e.Node]);
+                        frm1.ShowDialog();
+                        LoadTree(e.Node);
+                        break;
+                    case (int) TableLevel.Groups:
+                        GroupEditForm frm2 = new GroupEditForm(this, groupIDs[e.Node]);
+                        frm2.ShowDialog();
+                        LoadTree(e.Node);
+                        break;
+                    case (int) TableLevel.Students:
+                        StudentEditForm frm3 = new StudentEditForm(this, studentIDs[e.Node]);
+                        frm3.ShowDialog();
+                        Debug.Print(e.Node.ToString())Tos                 LoadTree(e.Node);
+                        break;
+                }
+            //}
+            //catch (NullReferenceException exception)
+            //{
+            //}
+        }
+
+        private void treeView1_AfterExpand(object sender, TreeViewEventArgs e)
+        {
+            //try
+            //{
+                switch (e.Node.Level)
+                {
+                    case (int)TableLevel.Faculties:
+                        LoadGroups(facultyIDs[e.Node], e.Node);
+                        break;
+                    case (int)TableLevel.Groups:
+                        LoadStudents(groupIDs[e.Node], e.Node);
+                        break;
+                    //case (int)TableLevel.Students:
+                    //    break;
+                }
+            //}
+            //catch (NullReferenceException exception)
+            //{
+            //}
         }
     }
 }

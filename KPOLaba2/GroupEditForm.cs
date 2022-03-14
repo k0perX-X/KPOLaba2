@@ -131,6 +131,11 @@ namespace KPOLaba2
             UnloadFaculties();
             RefreshSpecializations();
         }
+        private void specialization_IDComboBox_Leave(object sender, EventArgs e)
+        {
+            UnloadSpecializations();
+            RefreshFaculties();
+        }
 
         private void nameTextBox_Enter(object sender, EventArgs e)
         {
@@ -141,18 +146,14 @@ namespace KPOLaba2
         private void specialization_IDComboBox_Enter(object sender, EventArgs e)
         {
             RefreshFaculties();
-            RefreshSpecializations();
+            //RefreshSpecializations();
         }
 
         private void faculty_IDComboBox_Enter(object sender, EventArgs e)
         {
-            RefreshFaculties();
+            //RefreshFaculties();
             RefreshSpecializations();
         }
 
-        private void specialization_IDComboBox_Leave(object sender, EventArgs e)
-        {
-            UnloadSpecializations();
-        }
     }
 }
